@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+  <title>ftpPRIME</title>
+  <link rel="stylesheet" href="./vendor/xterm.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">fP</div>
+        <div class="brand-text">
+          <div class="brand-title">ftpPRIME</div>
+          <div class="brand-sub" data-i18n="app.brand.sub">Sync - Auto - Versoes</div>
+        </div>
+        <button id="openSettingsBtn" type="button" class="icon-btn-sm brand-settings" data-i18n-title="app.settings" title="Configurações">
+          <span class="icon-slot" data-icon="settings" data-size="18"></span>
+        </button>
+      </div>
+      <button id="newProjectBtn" type="button" class="btn btn-primary btn-block">
+        <span class="icon-slot" data-icon="plus"></span>
+        <span data-i18n="app.newProject">Novo Projeto</span>
+      </button>
+      <div class="project-list" id="projectList"></div>
+    </aside>
+
+    <main class="main">
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon" data-icon="folderBig" data-size="64"></div>
+        <h2 data-i18n="empty.title">Nenhum projeto selecionado</h2>
+        <p data-i18n="empty.subtitle">Crie um novo projeto ou selecione um da lista a esquerda.</p>
+      </div>
+
+      <section id="settingsView" class="project-view hidden">
+        <header class="project-header">
+          <div>
+            <h1 data-i18n="app.settings">Configurações</h1>
+          </div>
+        </header>
+        <div class="settings-body">
+          <section class="settings-section">
+            <h3 data-i18n="app.language">Idioma</h3>
+            <select id="settingLanguage" class="input settings-select">
+              <option value="pt">Português</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="it">Italiano</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="ru">Русский</option>
+              <option value="pl">Polski</option>
+              <option value="kk">Қазақша</option>
+              <option value="ja">日本語</option>
+              <option value="zh">中文</option>
+              <option value="ko">한국어</option>
+              <option value="hi">हिन्दी</option>
+              <option value="ar">العربية</option>
+            </select>
+          </section>
+
+          <section class="settings-section">
+            <h3 data-i18n="app.export">Exportar configurações</h3>
+            <p class="muted" data-i18n="app.export.desc">Gera um arquivo JSON com as configurações de todos os projetos.</p>
+            <button id="btnExportProjects" type="button" class="btn">
+              <span class="icon-slot" data-icon="download"></span>
+              <span data-i18n="app.export">Exportar configurações</span>
+            </button>
+          </section>
+
+          <section class="settings-section">
+            <h3 data-i18n="app.import">Importar configurações</h3>
+            <p class="muted" data-i18n="app.import.desc">Carrega projetos de um arquivo JSON exportado anteriormente.</p>
+            <div class="row" style="gap: 8px;">
+              <button id="btnImportMerge" type="button" class="btn">
+                <span class="icon-slot" data-icon="upload"></span>
+                <span data-i18n="app.import.merge">Mesclar</span>
+              </button>
+              <button id="btnImportReplace" type="button" class="btn btn-danger">
+                <span class="icon-slot" data-icon="upload"></span>
+                <span data-i18n="app.import.replace">Substituir</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="projectView" class="project-view hidden">
+        <header class="project-header">
+          <div>
+            <h1 id="projHeaderName">-</h1>
+            <div class="header-path">
+              <span class="muted" id="projHeaderPath">-</span>
+              <button id="openFolderBtn" type="button" class="icon-btn-sm hidden" data-i18n-title="header.openFolderTitle" title="Abrir pasta no Explorer">
+                <span class="icon-slot" data-icon="externalLink" data-size="14"></span>
+              </button>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn" id="testBtn" type="button">
+              <span class="icon-slot" data-icon="plug"></span>
+              <span data-i18n="header.testConn">Testar conexao</span>
+            </button>
+            <button class="btn" id="downloadBtn" type="button">
+              <span class="icon-slot" data-icon="download"></span>
+              <span data-i18n="header.downloadAll">Download tudo</span>
+            </button>
+            <button class="btn btn-primary" id="uploadBtn" type="button">
+              <span class="icon-slot" data-icon="upload"></span>
+              <span data-i18n="header.uploadAll">Upload tudo</span>
+            </button>
+            <label class="switch">
+              <input type="checkbox" id="autoToggle" />
+              <span class="slider"></span>
+              <span class="switch-label" data-i18n="header.autoUpload">Auto-upload</span>
+            </label>
+          </div>
+        </header>
+
+        <div class="tabs">
+          <button class="tab active" data-tab="files" type="button">
+            <span class="icon-slot" data-icon="file"></span>
+            <span data-i18n="tabs.files">Arquivos</span>
+          </button>
+          <button class="tab" data-tab="config" type="button">
+            <span class="icon-slot" data-icon="settings"></span>
+            <span data-i18n="tabs.config">Configuracao</span>
+          </button>
+          <button class="tab" data-tab="logs" type="button">
+            <span class="icon-slot" data-icon="file"></span>
+            <span data-i18n="tabs.logs">Logs</span>
+          </button>
+          <button class="tab" data-tab="terminal" type="button">
+            <span class="icon-slot" data-icon="terminal"></span>
+            <span data-i18n="tabs.terminal">Terminal</span>
+          </button>
+        </div>
+
+        <div class="tab-panel" data-panel="files">
+          <div class="toolbar">
+            <input type="text" id="fileFilter" class="input" data-i18n-placeholder="files.filter" placeholder="Filtrar arquivos..." />
+            <button class="btn" id="refreshFilesBtn" type="button">
+              <span class="icon-slot" data-icon="refresh"></span>
+              <span data-i18n="files.refresh">Atualizar</span>
+            </button>
+          </div>
+          <div class="file-table-wrap">
+            <table class="file-table">
+              <thead>
+                <tr>
+                  <th data-i18n="files.col.name">Arquivo</th>
+                  <th data-i18n="files.col.size">Tamanho</th>
+                  <th data-i18n="files.col.lastUpload">Ultimo upload</th>
+                  <th data-i18n="files.col.action">Acao</th>
+                  <th data-i18n="files.col.versions">Versoes</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="fileTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-panel hidden" data-panel="config">
+          <form id="configForm" class="form">
+            <div class="grid-2">
+              <div class="field">
+                <label data-i18n="config.name">Nome do projeto</label>
+                <input type="text" id="cfgName" required />
+              </div>
+              <div class="field">
+                <label data-i18n="config.localPath">Pasta local</label>
+                <div class="row">
+                  <input type="text" id="cfgLocalPath" required readonly />
+                  <button type="button" class="btn" id="pickFolderBtn">
+                    <span class="icon-slot" data-icon="folder"></span>
+                    <span data-i18n="config.choose">Escolher</span>
+                  </button>
+                </div>
+              </div>
+              <div class="field">
+                <label data-i18n="config.protocol">Protocolo</label>
+                <select id="cfgProtocol">
+                  <option value="sftp">SFTP</option>
+                  <option value="ftp">FTP</option>
+                </select>
+              </div>
+              <div class="field">
+                <label data-i18n="config.host">Host</label>
+                <input type="text" id="cfgHost" required />
+              </div>
+              <div class="field">
+                <label data-i18n="config.port">Porta</label>
+                <input type="number" id="cfgPort" />
+              </div>
+              <div class="field">
+                <label data-i18n="config.user">Usuario</label>
+                <input type="text" id="cfgUser" />
+              </div>
+              <div class="field">
+                <label data-i18n="config.password">Senha</label>
+                <input type="password" id="cfgPassword" />
+              </div>
+              <div class="field">
+                <label data-i18n="config.remotePath">Caminho remoto</label>
+                <input type="text" id="cfgRemotePath" placeholder="/public_html" />
+              </div>
+              <div class="field" id="secureField">
+                <label class="checkbox">
+                  <input type="checkbox" id="cfgSecure" /> <span data-i18n="config.ftps">FTPS (TLS) - apenas para FTP</span>
+                </label>
+              </div>
+            </div>
+            <div class="field">
+              <label data-i18n="config.ignores">Ignorar (um padrao por linha - aceita nomes ou globs, ex: <code>node_modules</code>, <code>*.log</code>, <code>dist/**</code>)</label>
+              <textarea id="cfgIgnores" rows="6" placeholder="node_modules&#10;*.log&#10;.env"></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-danger" id="deleteBtn">
+                <span class="icon-slot" data-icon="trash"></span>
+                <span data-i18n="config.delete">Excluir projeto</span>
+              </button>
+              <button type="submit" class="btn btn-primary" data-i18n="config.save">Salvar</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="tab-panel hidden" data-panel="logs">
+          <div class="toolbar">
+            <button class="btn" id="clearLogsBtn" type="button" data-i18n="logs.clear">Limpar</button>
+          </div>
+          <div class="log-view" id="logView"></div>
+        </div>
+
+        <div class="tab-panel hidden" data-panel="terminal">
+          <div class="toolbar">
+            <button class="btn" id="termRestartBtn" type="button">
+              <span class="icon-slot" data-icon="refresh"></span>
+              <span data-i18n="terminal.restart">Reiniciar</span>
+            </button>
+            <button class="btn" id="termClearBtn" type="button" data-i18n="terminal.clear">Limpar</button>
+            <span class="muted" id="termStatus" style="margin-left:8px;" data-i18n="terminal.stopped">parado</span>
+          </div>
+          <div class="terminal-wrap">
+            <div id="termContainer" class="terminal-xterm"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Versions Modal -->
+  <div class="modal hidden" id="versionsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><span class="icon-slot" data-icon="history"></span> Versoes - <span id="versionsFileName"></span></h3>
+        <button class="icon-btn" id="closeVersionsBtn" type="button">
+          <span class="icon-slot" data-icon="close" data-size="20"></span>
+        </button>
+      </div>
+      <div class="modal-body" id="versionsBody"></div>
+    </div>
+  </div>
+
+  <!-- Viewer Modal -->
+  <div class="modal hidden" id="viewerModal">
+    <div class="modal-content viewer-modal">
+      <div class="modal-header">
+        <h3>
+          <span class="icon-slot" data-icon="eye"></span>
+          Visualizar - <span id="viewerFileName"></span>
+          <span class="muted" id="viewerMeta" style="font-size:12px;font-weight:normal;margin-left:8px;"></span>
+        </h3>
+        <button class="icon-btn" id="closeViewerBtn" type="button">
+          <span class="icon-slot" data-icon="close" data-size="20"></span>
+        </button>
+      </div>
+      <div class="modal-body viewer-body" id="viewerBody"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="./vendor/xterm.js"></script>
+  <script src="./vendor/addon-fit.js"></script>
+  <script src="./icons.js"></script>
+  <script src="./locales.js"></script>
+  <script src="./renderer.js"></script>
+</body>
+</html>
